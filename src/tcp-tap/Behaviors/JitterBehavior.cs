@@ -14,7 +14,7 @@ public class JitterBehavior : IForwardingBehavior
         _maxDelayMs = maxDelayMs;
     }
     
-    public async Task<ReadOnlyMemory<byte>> ProcessAsync(ReadOnlyMemory<byte> chunk, CancellationToken cancellationToken)
+    public async Task<ReadOnlyMemory<byte>> ProcessAsync(ReadOnlyMemory<byte> chunk, ForwardingContext context, CancellationToken cancellationToken)
     {
         var delayMs = _random.Next(_minDelayMs, _maxDelayMs + 1);
         await Task.Delay(delayMs, cancellationToken);

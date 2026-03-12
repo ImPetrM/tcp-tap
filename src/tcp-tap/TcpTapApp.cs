@@ -64,14 +64,14 @@ public class TcpTapApp
         
         try
         {
-            var forwardingBehaviorsSend = _forwardingBehaviorChainFactory.GetForwardingBehaviorChain("Source -> Destination", _options);
-            var forwardingBehaviorsReceive = _forwardingBehaviorChainFactory.GetForwardingBehaviorChain("Destination -> Source", _options);
+            var forwardingBehaviorsChain = _forwardingBehaviorChainFactory.GetForwardingBehaviorChain(_options);
+            
             forwardConnection = new TcpClient(_options.ForwardHost, _options.ForwardPort);
         
             var handlingTasks = new List<Task>
             {
-                ForwardDataAsync(tcpClient.GetStream(), forwardConnection.GetStream(), forwardingBehaviorsSend, cancellationToken),
-                ForwardDataAsync(forwardConnection.GetStream(), tcpClient.GetStream(), forwardingBehaviorsReceive, cancellationToken)
+                ForwardDataAsync(tcpClient.GetStream(), forwardConnection.GetStream(), FlowDirection.SourceToDestination, forwardingBehaviorsChain, cancellationToken),
+                ForwardDataAsync(forwardConnection.GetStream(), tcpClient.GetStream(), FlowDirection.DestinationToSource, forwardingBehaviorsChain, cancellationToken)
             };
         
             await Task.WhenAny(handlingTasks);
@@ -83,7 +83,7 @@ public class TcpTapApp
         }
     }
 
-    private async Task ForwardDataAsync(NetworkStream source, NetworkStream destination, IReadOnlyList<IForwardingBehavior> forwardingBehaviors, CancellationToken cancellationToken)
+    private async Task ForwardDataAsync(NetworkStream source, NetworkStream destination, FlowDirection direction, IReadOnlyList<IForwardingBehavior> forwardingBehaviors, CancellationToken cancellationToken)
     {
         var sourceReader = PipeReader.Create(source);
         var destinationWriter = PipeWriter.Create(destination);
@@ -101,10 +101,11 @@ public class TcpTapApp
             
             foreach (var chunk in buffer)
             {
+                var context = new ForwardingContext(direction);
                 var chunkBuffer = chunk;
                 foreach (var forwardingBehavior in forwardingBehaviors)
                 {
-                    chunkBuffer = await forwardingBehavior.ProcessAsync(chunkBuffer, cancellationToken);
+                    chunkBuffer = await forwardingBehavior.ProcessAsync(chunkBuffer, context, cancellationToken);
                 }
 
                 await destinationWriter.WriteAsync(chunkBuffer, cancellationToken);

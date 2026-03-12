@@ -11,7 +11,7 @@ public class DelayBehavior : IForwardingBehavior
         _delayMs = delayMs;
     }
 
-    public async Task<ReadOnlyMemory<byte>> ProcessAsync(ReadOnlyMemory<byte> chunk, CancellationToken cancellationToken)
+    public async Task<ReadOnlyMemory<byte>> ProcessAsync(ReadOnlyMemory<byte> chunk, ForwardingContext context, CancellationToken cancellationToken)
     {
         await Task.Delay(_delayMs, cancellationToken);
         return chunk;

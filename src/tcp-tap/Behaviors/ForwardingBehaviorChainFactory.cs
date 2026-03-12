@@ -11,10 +11,10 @@ public class ForwardingBehaviorChainFactory : IForwardingBehaviorChainFactory
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     
-    public IReadOnlyList<IForwardingBehavior> GetForwardingBehaviorChain(string chainName, TcpTapOptions options)
+    public IReadOnlyList<IForwardingBehavior> GetForwardingBehaviorChain(TcpTapOptions options)
     {
         var behaviors = new List<IForwardingBehavior>();
-        behaviors.Add(new TapBehavior(chainName));
+        behaviors.Add(new TapBehavior());
         
         if (IsDelayRequested(options))
         {
@@ -26,9 +26,8 @@ public class ForwardingBehaviorChainFactory : IForwardingBehaviorChainFactory
             behaviors.Add(new JitterBehavior(options.JitterMinMs.Value, options.JitterMaxMs.Value));
         }
         
-        _logger.LogInformation("Constructed forwarding behavior chain '{ChainName}' with behaviors: {Behaviors}",
-            chainName, 
-            behaviors.Select(b => b.GetType().Name).ToArray());
+        _logger.LogInformation("Constructed forwarding behavior chain with following behaviors: {Behaviors}",
+            string.Join(',', behaviors.Select(b => b.Name)));
         
         return behaviors;
     }

@@ -5,29 +5,21 @@ namespace tcp_tap.Behaviors;
 public class TapBehavior : IForwardingBehavior
 {
     private const int BytesPerLine = 8;
-    private const string DefaultTappedChunkCaption = "Tapped chunk";
+    private const string SourceToDestinationCaption = "Source -> Destination";
+    private const string DestinationToSourceCaption = "Destination -> Source";
     
-    private readonly string _tappedChungCaption;
     public string Name => nameof(TapBehavior);
     
-    public TapBehavior(string tappedChungCaption = "")
+    public TapBehavior()
     {
-        if (string.IsNullOrWhiteSpace(tappedChungCaption))
-        {
-            _tappedChungCaption = DefaultTappedChunkCaption;
-        }
-        else
-        {
-            _tappedChungCaption = tappedChungCaption;
-        }
     }
     
-    public Task<ReadOnlyMemory<byte>> ProcessAsync(ReadOnlyMemory<byte> chunk, CancellationToken cancellationToken)
+    public Task<ReadOnlyMemory<byte>> ProcessAsync(ReadOnlyMemory<byte> chunk, ForwardingContext context, CancellationToken cancellationToken)
     {
         var chunkSpan = chunk.Span;
         var output = new StringBuilder();
         
-        output.AppendLine($"{_tappedChungCaption}:");
+        output.AppendLine($"{GetCaption(context.Direction)}:");
         for (var index = 0; index < chunkSpan.Length; index++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -45,5 +37,15 @@ public class TapBehavior : IForwardingBehavior
         Console.WriteLine(output.ToString());
 
         return Task.FromResult(chunk);
+    }
+    
+    private static string GetCaption(FlowDirection direction)
+    {
+        return direction switch
+        {
+            FlowDirection.SourceToDestination => SourceToDestinationCaption,
+            FlowDirection.DestinationToSource => DestinationToSourceCaption,
+            _ => throw new InvalidOperationException($"Unknown forwarding direction: {direction}")
+        };
     }
 }
