@@ -3,20 +3,25 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using tcp_tap.Behaviors;
+using tcp_tap.Sinks;
 
 namespace tcp_tap;
 
 public class TcpTapApp
 {
     private readonly IForwardingBehaviorChainFactory _forwardingBehaviorChainFactory;
+    private readonly IRecordPublisher _recordPublisher;
     private readonly TcpTapOptions _options;
     private readonly ILogger<TcpTapApp> _logger;
     
     private Task _currentClientTask = Task.CompletedTask;
 
-    public TcpTapApp(IForwardingBehaviorChainFactory forwardingBehaviorChainFactory, TcpTapOptions options, ILogger<TcpTapApp> logger)
+    public TcpTapApp(IForwardingBehaviorChainFactory forwardingBehaviorChainFactory, IRecordPublisher recordPublisher, 
+        TcpTapOptions options, ILogger<TcpTapApp> logger)
     {
         _forwardingBehaviorChainFactory = forwardingBehaviorChainFactory ?? throw new ArgumentNullException(nameof(forwardingBehaviorChainFactory));
+        _recordPublisher = recordPublisher ?? throw new ArgumentNullException(nameof(recordPublisher));
+        
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -101,13 +106,16 @@ public class TcpTapApp
             
             foreach (var chunk in buffer)
             {
-                var context = new ForwardingContext(direction);
+                var context = new ForwardingContext(DateTime.UtcNow, direction);
                 var chunkBuffer = chunk;
                 foreach (var forwardingBehavior in forwardingBehaviors)
                 {
                     chunkBuffer = await forwardingBehavior.ProcessAsync(chunkBuffer, context, cancellationToken);
                 }
-
+                
+                context.SendAt = DateTime.UtcNow;
+                await RecordChunkAsync(context, chunkBuffer, cancellationToken);
+                
                 await destinationWriter.WriteAsync(chunkBuffer, cancellationToken);
                 await destinationWriter.FlushAsync(cancellationToken);
             }
@@ -129,5 +137,18 @@ public class TcpTapApp
             Console.WriteLine("Finished handling client connection.");
             Console.WriteLine($"Waiting for incoming connections on port {_options.ListenPort}...");
         }
+    }
+
+    private Task RecordChunkAsync(ForwardingContext context, ReadOnlyMemory<byte> chunk, CancellationToken cancellationToken)
+    {
+        var chunkRecord = new ChunkRecord
+        {
+            CapturedAt = context.CapturedAt,
+            SendAt = context.SendAt,
+            FlowDirection = context.Direction,
+            Chunk = chunk.ToArray()
+        };
+        
+        return _recordPublisher.PublishAsync(chunkRecord, cancellationToken);
     }
 }
