@@ -14,8 +14,6 @@ public class ForwardingBehaviorChainFactory : IForwardingBehaviorChainFactory
     public IReadOnlyList<IForwardingBehavior> GetForwardingBehaviorChain(TcpTapOptions options)
     {
         var behaviors = new List<IForwardingBehavior>();
-        behaviors.Add(new TapBehavior());
-        
         if (IsDelayRequested(options))
         {
             behaviors.Add(new DelayBehavior(options.DelayMs.Value));

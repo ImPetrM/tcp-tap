@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using tcp_tap.Behaviors;
+using tcp_tap.Sinks;
 
 namespace tcp_tap;
 
@@ -15,6 +16,7 @@ class Program
     private const string DelayMsArgumentName = "--delay-ms";
     private const string JitterMinArgumentName = "--delay-min-ms";
     private const string JitterMaxArgumentName = "--delay-max-ms";
+    private const string LogToFileArgumentName = "--log-to-file";
     
     static int Main(string[] args)
     {
@@ -78,6 +80,12 @@ class Program
             Required = false
         };
         
+        var logToFileOption = new Option<string>(LogToFileArgumentName)
+        {
+            Description = "If specified, the path to a file where the TCP tap will log captured data. If not provided, logging to file will be disabled.",
+            Required = false
+        };
+        
         return new RootCommand("A TCP tap tool that listens for incoming TCP connections on a specified local port displays data and forwards them to a specified destination server and port. " +
                                "The tool can introduce configurable delays and jitter to simulate network latency conditions.")
         {
@@ -86,7 +94,8 @@ class Program
             forwardPortOption,
             delayMs,
             jitterMinOption,
-            jitterMaxOption
+            jitterMaxOption,
+            logToFileOption
         };
     }
     
@@ -98,6 +107,7 @@ class Program
         var delayMs = parseResults.GetValue<int?>(DelayMsArgumentName);
         var jitterMinMs = parseResults.GetValue<int?>(JitterMinArgumentName);
         var jitterMaxMs = parseResults.GetValue<int?>(JitterMaxArgumentName);
+        var logToFilePath = parseResults.GetValue<string?>(LogToFileArgumentName);
 
         var options = new TcpTapOptions
         {
@@ -106,7 +116,9 @@ class Program
             ForwardPort = forwardPort,
             DelayMs = delayMs,
             JitterMinMs = jitterMinMs,
-            JitterMaxMs = jitterMaxMs
+            JitterMaxMs = jitterMaxMs,
+            LogToFile = !string.IsNullOrEmpty(logToFilePath),
+            FilePath = logToFilePath ?? string.Empty
         };
         
         return RunHost(options, cancellationToken);
@@ -124,6 +136,7 @@ class Program
         
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton<TcpTapApp>();
+        builder.Services.AddSingleton<IRecordPublisher, RecordPublisher>();
         builder.Services.AddSingleton<IForwardingBehaviorChainFactory, ForwardingBehaviorChainFactory>();
 
         using var host = builder.Build();

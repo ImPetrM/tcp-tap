@@ -9,4 +9,8 @@ public class TcpTapOptions
     public int? DelayMs { get; init; }
     public int? JitterMinMs { get; init; }
     public int? JitterMaxMs { get; init; }
+
+    public bool ConsoleOutput { get; init; } = true;
+    public bool LogToFile { get; init; } = false;
+    public string FilePath { get; init; } = String.Empty;
 }
