@@ -4,16 +4,14 @@ namespace tcp_tap.Sinks;
 
 public class FileRecordSink : IRecordSink
 {
-    private const int BytesPerLine = 8;
-    private const string SourceToDestinationCaption = "Source -> Destination";
-    private const string DestinationToSourceCaption = "Destination -> Source";
-    
     private readonly string _filePath;
+    private readonly ITextChunkFormatter _formatter;
     private StreamWriter? _writer;
 
-    public FileRecordSink(string filePath)
+    public FileRecordSink(string filePath, ITextChunkFormatter formatter)
     {
         _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
+        _formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
     }
 
     public Task WriteAsync(ChunkRecord chunkRecord, CancellationToken cancellationToken)
@@ -29,22 +27,7 @@ public class FileRecordSink : IRecordSink
         foreach (var chunkRecord in chunkRecords)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
-            output.AppendLine($"{GetCaption(chunkRecord.FlowDirection)}:");
-            output.AppendLine($"Captured: {chunkRecord.CapturedAt:O} | Sent: {chunkRecord.SendAt:O}");
-            for (var index = 0; index < chunkRecord.Chunk.Length; index++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-            
-                if(index % BytesPerLine == 0) 
-                    output.Append($"{index:X4}: ");
-            
-                output.Append($"{chunkRecord.Chunk[index]:X2} ");
-
-                if ((index + 1) % BytesPerLine == 0)
-                    output.AppendLine();
-            }
-            output.AppendLine();
+            output.AppendLine(_formatter.FormatChunk(chunkRecord));
         }
         
         await writer.WriteAsync(output.ToString());
@@ -60,16 +43,6 @@ public class FileRecordSink : IRecordSink
     {
         var stream = new FileStream(_filePath, FileMode.Append, FileAccess.Write, FileShare.Read);
         return new StreamWriter(stream) { AutoFlush = true };
-    }
-    
-    private static string GetCaption(FlowDirection direction)
-    {
-        return direction switch
-        {
-            FlowDirection.SourceToDestination => SourceToDestinationCaption,
-            FlowDirection.DestinationToSource => DestinationToSourceCaption,
-            _ => throw new InvalidOperationException($"Unknown forwarding direction: {direction}")
-        };
     }
 
     public async ValueTask DisposeAsync()

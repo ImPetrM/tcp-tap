@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tcp-tap", "src\tcp-tap\tcp-tap.csproj", "{9FEEB744-6F26-412F-90EE-5BDA7276B76B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{4F2FACE6-0F81-4C6D-83F1-537B9751D127}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tcp-tap.UnitTests", "tests\tcp-tap.UnitTests\tcp-tap.UnitTests.csproj", "{3FF48991-1FD9-48DB-8C0E-BB7F381A2F52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +16,12 @@ Global
 		{9FEEB744-6F26-412F-90EE-5BDA7276B76B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9FEEB744-6F26-412F-90EE-5BDA7276B76B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9FEEB744-6F26-412F-90EE-5BDA7276B76B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FF48991-1FD9-48DB-8C0E-BB7F381A2F52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FF48991-1FD9-48DB-8C0E-BB7F381A2F52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FF48991-1FD9-48DB-8C0E-BB7F381A2F52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FF48991-1FD9-48DB-8C0E-BB7F381A2F52}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3FF48991-1FD9-48DB-8C0E-BB7F381A2F52} = {4F2FACE6-0F81-4C6D-83F1-537B9751D127}
 	EndGlobalSection
 EndGlobal

@@ -21,12 +21,13 @@ public class RecordPublisher : IRecordPublisher
     private List<IRecordSink> InitializeSinks(TcpTapOptions options)
     {
         var sinks = new List<IRecordSink>();
+        var formatter = new HexTextFormatter(); 
         
         if(options.ConsoleOutput)
-            sinks.Add(new ConsoleRecordSink());
+            sinks.Add(new ConsoleRecordSink(formatter));
 
         if(options.LogToFile)
-            sinks.Add(new FileRecordSink(options.FilePath));
+            sinks.Add(new FileRecordSink(options.FilePath, formatter));
         
         // Add other sinks based on options here
         
