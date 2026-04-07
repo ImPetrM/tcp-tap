@@ -138,6 +138,7 @@ class Program
         builder.Services.AddSingleton<TcpTapApp>();
         builder.Services.AddSingleton<IRecordPublisher, RecordPublisher>();
         builder.Services.AddSingleton<IForwardingBehaviorChainFactory, ForwardingBehaviorChainFactory>();
+        builder.Services.AddSingleton<ITextChunkFormatter, HexTextFormatter>();
 
         using var host = builder.Build();
 

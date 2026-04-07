@@ -4,9 +4,12 @@ namespace tcp_tap.Sinks;
 
 public class ConsoleRecordSink : IRecordSink
 {
-    private const int BytesPerLine = 8;
-    private const string SourceToDestinationCaption = "Source -> Destination";
-    private const string DestinationToSourceCaption = "Destination -> Source";
+    private readonly ITextChunkFormatter _formatter;
+
+    public ConsoleRecordSink(ITextChunkFormatter formatter)
+    {
+        _formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
+    }
     
     public Task WriteAsync(ChunkRecord chunkRecord, CancellationToken cancellationToken)
     {
@@ -20,37 +23,12 @@ public class ConsoleRecordSink : IRecordSink
         foreach (var chunkRecord in chunkRecords)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            
-            output.AppendLine($"{GetCaption(chunkRecord.FlowDirection)}:");
-            output.AppendLine($"Captured: {chunkRecord.CapturedAt:O} | Sent: {chunkRecord.SendAt:O}");
-            for (var index = 0; index < chunkRecord.Chunk.Length; index++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-            
-                if(index % BytesPerLine == 0) 
-                    output.Append($"{index:X4}: ");
-            
-                output.Append($"{chunkRecord.Chunk[index]:X2} ");
-
-                if ((index + 1) % BytesPerLine == 0)
-                    output.AppendLine();
-            }
-            output.AppendLine();
+            output.AppendLine(_formatter.FormatChunk(chunkRecord));
         }
         
         Console.WriteLine(output.ToString());
 
         return Task.CompletedTask;
-    }
-
-    private static string GetCaption(FlowDirection direction)
-    {
-        return direction switch
-        {
-            FlowDirection.SourceToDestination => SourceToDestinationCaption,
-            FlowDirection.DestinationToSource => DestinationToSourceCaption,
-            _ => throw new InvalidOperationException($"Unknown forwarding direction: {direction}")
-        };
     }
 
     public ValueTask DisposeAsync()
